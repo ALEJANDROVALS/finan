@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Finanzas Personales</title>
+    <meta name="description" content="Una sencilla aplicación PWA para gestionar tus finanzas personales.">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Mis Finanzas">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="theme-color" content="#4CAF50">
+
+    <style>
+        /* Estilos CSS */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        main {
+            padding: 20px;
+            flex-grow: 1;
+            max-width: 600px;
+            margin: 20px auto;
+            width: 100%;
+        }
+
+        .balance-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .balance-card h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.2em;
+        }
+
+        .balance-amount {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #28a745; /* Verde para balance positivo */
+            margin-top: 10px;
+        }
+
+        .form-section {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-section input[type="number"],
+        .form-section input[type="text"],
+        .form-section select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-section button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .transactions-list {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+        }
+
+        .transactions-list h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        #transactions-container {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-info {
+            flex-grow: 1;
+        }
+
+        .transaction-description {
+            font-weight: bold;
+            color: #444;
+        }
+
+        .transaction-date {
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .transaction-type-ingreso {
+            color: #28a745;
+            background-color: #e6ffe6;
+        }
+
+        .transaction-type-gasto {
+            color: #dc3545;
+            background-color: #ffe6e6;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.2em;
+            margin-left: 10px;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            color: #a71d2a;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mis Finanzas</h1>
+    </header>
+
+    <main>
+        <section class="balance-card">
+            <h2>Balance Actual</h2>
+            <p id="balance-amount" class="balance-amount">$0.00</p>
+        </section>
+
+        <section class="form-section">
+            <h2>Nueva Transacción</h2>
+            <form id="transaction-form">
+                <label for="description">Descripción:</label>
+                <input type="text" id="description" required placeholder="Ej. Café, Salario, Alquiler">
+
+                <label for="amount">Monto:</label>
+                <input type="number" id="amount" step="0.01" required placeholder="Ej. 50.00">
+
+                <label for="type">Tipo:</label>
+                <select id="type" required>
+                    <option value="ingreso">Ingreso</option>
+                    <option value="gasto">Gasto</option>
+                </select>
+
+                <button type="submit">Agregar Transacción</button>
+            </form>
+        </section>
+
+        <section class="transactions-list">
+            <h2>Historial de Transacciones</h2>
+            <ul id="transactions-container">
+                </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Gestión de Finanzas Personales</p>
+    </footer>
+
+    <script>
+        // JavaScript para la lógica de la aplicación
+
+        // Obtener elementos del DOM
+        const balanceAmount = document.getElementById('balance-amount');
+        const transactionForm = document.getElementById('transaction-form');
+        const descriptionInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const typeInput = document.getElementById('type');
+        const transactionsContainer = document.getElementById('transactions-container');
+
+        // Array para almacenar las transacciones
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+        // Función para guardar transacciones en LocalStorage
+        function saveTransactions() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        // Función para renderizar una transacción individual en la lista
+        function renderTransaction(transaction) {
+            const listItem = document.createElement('li');
+            listItem.classList.add('transaction-item');
+            listItem.dataset.id = transaction.id; // Guarda el ID para fácil eliminación
+
+            const amountClass = transaction.type === 'ingreso' ? 'transaction-type-ingreso' : 'transaction-type-gasto';
+            const sign = transaction.type === 'ingreso' ? '+' : '-';
+
+            listItem.innerHTML = `
+                <div class="transaction-info">
+                    <div class="transaction-description">${transaction.description}</div>
+                    <div class="transaction-date">${new Date(transaction.date).toLocaleDateString()}</div>
+                </div>
+                <div class="transaction-amount ${amountClass}">
+                    ${sign}$${Math.abs(transaction.amount).toFixed(2)}
+                </div>
+                <button class="delete-btn" aria-label="Eliminar transacción">✖</button>
+            `;
+
+            transactionsContainer.appendChild(listItem);
+        }
+
+        // Función para actualizar el balance y mostrar transacciones
+        function updateUI() {
+            transactionsContainer.innerHTML = ''; // Limpiar la lista antes de volver a renderizar
+            let totalBalance = 0;
+
+            transactions.forEach(transaction => {
+                renderTransaction(transaction);
+                if (transaction.type === 'ingreso') {
+                    totalBalance += transaction.amount;
+                } else {
+                    totalBalance -= transaction.amount;
+                }
+            });
+
+            balanceAmount.textContent = `$${totalBalance.toFixed(2)}`;
+            if (totalBalance < 0) {
+                balanceAmount.style.color = '#dc3545'; // Rojo si el balance es negativo
+            } else {
+                balanceAmount.style.color = '#28a745'; // Verde si el balance es positivo
+            }
+        }
+
+        // Manejar el envío del formulario
+        transactionForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevenir el envío por defecto del formulario
+
+            const description = descriptionInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = typeInput.value;
+
+            if (description === '' || isNaN(amount) || amount <= 0) {
+                alert('Por favor, ingresa una descripción válida y un monto positivo.');
+                return;
+            }
+
+            const newTransaction = {
+                id: Date.now(), // ID único basado en la marca de tiempo
+                description,
+                amount,
+                type,
+                date: new Date().toISOString()
+            };
+
+            transactions.push(newTransaction);
+            saveTransactions(); // Guardar en LocalStorage
+            updateUI(); // Actualizar la interfaz de usuario
+
+            // Limpiar el formulario
+            descriptionInput.value = '';
+            amountInput.value = '';
+            typeInput.value = 'ingreso'; // Restablecer a ingreso
+        });
+
+        // Manejar la eliminación de transacciones
+        transactionsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const listItem = e.target.closest('.transaction-item');
+                const idToDelete = parseInt(listItem.dataset.id);
+
+                transactions = transactions.filter(transaction => transaction.id !== idToDelete);
+                saveTransactions(); // Guardar en LocalStorage
+                updateUI(); // Actualizar la interfaz de usuario
+            }
+        });
+
+        // Inicializar la UI al cargar la página
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+        // Service Worker (para capacidades PWA offline)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registrado con éxito:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Fallo el registro del ServiceWorker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
